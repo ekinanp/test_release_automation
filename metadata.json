@@ -1,10 +1,12 @@
 {
   "name": "ekinanp-test_release_automation",
   "version": "0.1.0",
-  "author": "Enis Inan",
-  "summary": "",
+  "author": "ekinanp",
+  "summary": "Module to test release automation",
   "license": "Apache-2.0",
-  "source": "",
+  "source": "https://github.com/ekinanp/test_release_automation",
+  "project_page": "https://github.com/ekinanp/test_release_automation",
+  "issues_url": "https://github.com/ekinanp/test_release_automation/issues",
   "dependencies": [
 
   ],
@@ -60,6 +62,6 @@
     }
   ],
   "pdk-version": "1.18.1",
-  "template-url": "pdk-default#1.18.1",
+  "template-url": "https://github.com/puppetlabs/pdk-templates#1.18.1",
   "template-ref": "tags/1.18.1-0-g3d2e75c"
 }
