@@ -38,6 +38,8 @@ jobs:
 
     - name: Generate the release prep commit
       run: |
+        git rev-list --tags --max-count=1
+
         git checkout -b release_prep
         # BUNDLER HERE
         echo "LOL" >> CHANGELOG.md
