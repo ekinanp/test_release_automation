@@ -23,8 +23,7 @@ jobs:
         ref: ${{ env.RELEASE_VERSION }}
     - name: Release
       env:
-        BLACKSMITH_FORGE_USERNAME: ekinanp
-        BLACKSMITH_FORGE_PASSWORD: ${{ secrets.FORGE_API_KEY }}
+        BLACKSMITH_FORGE_TOKEN: ${{ secrets.FORGE_API_KEY }}
       run: | 
         bundle install --with release
         bundle exec rake module:build
