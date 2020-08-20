@@ -1,0 +1,49 @@
+name: release_prep
+
+on:
+  workflow_dispatch:
+    inputs:
+      module_version:
+        required: true
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 2.5.3
+
+    - name: Install hub
+      uses: geertvdc/setup-hub@master
+      with:
+        hub-version: 2.14.2
+
+    - name: Update Rubygems
+      run: gem update --system 3.1.0
+
+    - name: Clone repository
+      uses: actions/checkout@v2
+      with:
+        # TODO: Change to 'main'
+        ref: master
+
+    - name: Generate release prep commit
+      env:
+        CHANGELOG_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: | 
+        bundle install --with release_prep
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        pdk release prep --version=${{ github.event.inputs.module_version }} --force
+        git add .
+        git commit -m "Release prep to ${{ github.event.inputs.module_version }}"
+
+    - name: Push release prep commit
+      uses: ad-m/github-push-action@master
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        branch: release_prep
+        force: true

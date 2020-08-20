@@ -31,6 +31,10 @@ group :development do
   gem "github_changelog_generator", '~> 1.15',                   require: false if Gem::Version.new(RUBY_VERSION.dup) >= Gem::Version.new('2.3.0')
 end
 
+group :release_prep do
+  gem 'pdk', '~> 1.18', require: false
+end
+
 group :release do
   gem 'puppet-blacksmith', '~> 6.0', require: false
 end
