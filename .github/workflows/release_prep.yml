@@ -25,9 +25,18 @@ jobs:
       uses: actions/checkout@v2
       with:
         ref: ${{ env.GITHUB_BRANCH }}
+        # Needed to fetch all the tags
+        fetch-depth: 0
 
-    # Place this step _before_ the release prep commit step; otherwise,
-    # this will try to git-des
+    - name: Generate the release prep commit
+      run: |
+        git checkout -b release_prep
+        bundle install --with release_prep
+        pdk release prep --version=${{ github.event.inputs.module_version }} --skip-changelog
+        git add .
+        git -c user.name=${{ github.actor }} -c user.email=${{ github.actor }}@users.noreply.github.com commit -m "Release prep to ${{ github.event.inputs.module_version }}"
+        git push --set-upstream origin release_prep --force
+
     - name: Get most recent tag
       id: most_recent_tag
       uses: "WyriHaximus/github-action-get-previous-tag@master"
@@ -35,16 +44,6 @@ jobs:
       # This just means that our job corresponds to the first release, so continuing
       # on error is OK.
       continue-on-error: true
-
-    - name: Generate the release prep commit
-      run: |
-        git checkout -b release_prep
-        # BUNDLER HERE
-        echo "LOL" >> CHANGELOG.md
-        #
-        git add .
-        git -c user.name=${{ github.actor }} -c user.email=${{ github.actor }}@users.noreply.github.com commit -m "Release prep to ${{ github.event.inputs.module_version }}"
-        git push --set-upstream origin release_prep --force
 
     - name: Set PR_NOTE environment variable
       run: |
