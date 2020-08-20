@@ -1,0 +1,54 @@
+name: release_prep
+
+on:
+  workflow_dispatch:
+    inputs:
+      module_version:
+        required: true
+
+jobs:
+  release_prep:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Extract branch name
+      run: echo ::set-env name=GITHUB_BRANCH::$(echo ${GITHUB_REF#refs/heads/})
+
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 2.5.3
+
+    - name: Update Rubygems
+      run: gem update --system 3.1.0
+
+    - name: Clone repository
+      uses: actions/checkout@v2
+      with:
+        ref: ${{ env.GITHUB_BRANCH }}
+
+    - name: Generate release prep commit
+      env:
+        CHANGELOG_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: | 
+        bundle install --with release_prep
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        pdk release prep --version=${{ github.event.inputs.module_version }} --force
+        git add .
+        git commit -m "Release prep to ${{ github.event.inputs.module_version }}"
+
+    - name: Push release prep commit
+      uses: ad-m/github-push-action@master
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        branch: release_prep
+        force: true
+
+    - name: Generate the release prep PR
+      uses: repo-sync/pull-request@v2
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        source_branch: 'release_prep'
+        destination_branch: ${{ env.GITHUB_BRANCH }}
+        pr_title: "Release prep to ${{ github.event.inputs.module_version }}"
+        pr_body: ''
