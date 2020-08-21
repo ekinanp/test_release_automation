@@ -28,15 +28,6 @@ jobs:
         # Needed to fetch all the tags
         fetch-depth: 0
 
-    - name: Generate the release prep commit
-      run: |
-        git checkout -b release_prep
-        bundle install --with release_prep
-        pdk release prep --version=${{ github.event.inputs.module_version }} --skip-changelog
-        git add .
-        git -c user.name=${{ github.actor }} -c user.email=${{ github.actor }}@users.noreply.github.com commit -m "Release prep to ${{ github.event.inputs.module_version }}"
-        git push --set-upstream origin release_prep --force
-
     - name: Get most recent tag
       id: most_recent_tag
       uses: "WyriHaximus/github-action-get-previous-tag@master"
@@ -45,14 +36,26 @@ jobs:
       # on error is OK.
       continue-on-error: true
 
-    - name: Set PR_NOTE environment variable
+    - name: Calculate the release prep commit's COMMIT_TITLE and COMMIT_BODY
       run: |
-        if [ -z '${{ steps.most_recent_tag.outputs.tag  }}' ]; then
-          pr_note=''
-        else
-          pr_note='**Note:** You can use https://github.com/${{ github.repository }}/compare/${{ steps.most_recent_tag.outputs.tag  }}...${{ env.GITHUB_BRANCH }} to see all the new commits that have landed since the previous release.'
+        echo ::set-env name=COMMIT_TITLE::$(echo 'Release prep to ${{ github.event.inputs.module_version }}')
+        commit_body=$(echo -n 'You will need to manually update the \`CHANGELOG.md\` file. First, checkout this PR on your local machine via something like \`git fetch upstream; git checkout upstream/release_prep\`. Then, once you have updated the \`CHANGELOG.md\` file, \`git commit --amend\` your update, then push your changes to this PR via something like \`git push --set-upstream upstream.\`')
+        if [ ! -z '${{ steps.most_recent_tag.outputs.tag  }}' ]; then
+          commit_body=$(echo "${commit_body}")
+          commit_body=$(echo "${commit_body}")
+          commit_body=$(echo -n "${commit_body}**Note:** You can use https://github.com/${{ github.repository }}/compare/${{ steps.most_recent_tag.outputs.tag  }}...${{ env.GITHUB_BRANCH }} to see all the new commits that have landed since the previous release.")
         fi
-        echo ::set-env name=PR_NOTE::"${pr_note}"
+        echo ::set-env name=COMMIT_BODY::$(echo "${commit_body}")
+
+    - name: Generate the release prep commit
+      run: |
+        git checkout -b release_prep
+        echo "LOL" >> CHANGELOG.md
+        #        bundle install --with release_prep
+        #        pdk release prep --version=${{ github.event.inputs.module_version }} --skip-changelog
+        git add .
+        git -c user.name=${{ github.actor }} -c user.email=${{ github.actor }}@users.noreply.github.com commit -m "${{ env.COMMIT_TITLE }}" -m "${{ env.COMMIT_BODY }}"
+        git push --set-upstream origin release_prep --force
 
     - name: Generate the release prep PR
       uses: repo-sync/pull-request@v2
@@ -60,8 +63,3 @@ jobs:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         source_branch: 'release_prep'
         destination_branch: ${{ env.GITHUB_BRANCH }}
-        pr_title: "Release prep to ${{ github.event.inputs.module_version }}"
-        pr_body: |
-          You will need to manually update the \`CHANGELOG.md\` file. First, checkout this PR on your local machine via something like \`git fetch upstream; git checkout upstream/release_prep\`. Then, once you've updated the \`CHANGELOG.md\` file, \`git commit --amend\` your update, then push your changes to this PR via something like \`git push --set-upstream upstream\`.
-
-          ${{ env.PR_NOTE }}
